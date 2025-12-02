@@ -1,0 +1,27 @@
+2025-12-02T05:17:54.778Z [INFO] Starting Copilot CLI: 0.0.365
+Commit: 76d0881
+2025-12-02T05:17:54.778Z [INFO] Node.js version: v24.11.1
+2025-12-02T05:17:55.178Z [INFO] Login status unknown
+2025-12-02T05:17:55.239Z [INFO] Remote session access disabled
+2025-12-02T05:17:55.244Z [ERROR] Error checking for updates: TypeError: Cannot read properties of undefined (reading 'paths')
+2025-12-02T05:17:55.264Z [INFO] Logged in with COPILOT_GITHUB_TOKEN as user: endrioo123-hue
+2025-12-02T05:17:55.657Z [LOG] Starting remote MCP client for github-mcp-server with url: https://api.individual.githubcopilot.com/mcp/readonly
+2025-12-02T05:17:55.658Z [LOG] Creating MCP client for github-mcp-server...
+2025-12-02T05:17:55.664Z [LOG] Connecting MCP client for github-mcp-server...
+2025-12-02T05:17:57.313Z [LOG] MCP client for github-mcp-server connected, took 1649ms
+2025-12-02T05:17:57.313Z [LOG] Started MCP client for remote server github-mcp-server
+2025-12-02T05:17:57.313Z [LOG] GitHub MCP server configured after authentication
+2025-12-02T05:18:05.361Z [WARNING] Failed to backup C:\Users\endri\AppData\Roaming\Code\User\keybindings.json: Error: ENOENT: no such file or directory, copyfile 'C:\Users\endri\AppData\Roaming\Code\User\keybindings.json' -> 'C:\Users\endri\AppData\Roaming\Code\User\keybindings.json.2025-12-02T05-18-05-361Z.backup'
+2025-12-02T05:18:29.042Z [LOG] Starting remote MCP client for github-mcp-server with url: https://api.individual.githubcopilot.com/mcp/readonly
+2025-12-02T05:18:29.042Z [LOG] Creating MCP client for github-mcp-server...
+2025-12-02T05:18:29.044Z [LOG] Connecting MCP client for github-mcp-server...
+2025-12-02T05:18:29.446Z [LOG] MCP client for github-mcp-server connected, took 402ms
+2025-12-02T05:18:29.446Z [LOG] Started MCP client for remote server github-mcp-server
+2025-12-02T05:18:30.518Z [INFO] Using default model: claude-sonnet-4.5
+2025-12-02T05:18:30.522Z [INFO]  
+2025-12-02T05:18:34.661Z [INFO] [log_d99028, x-request-id: "00000-173e926e-139b-48a2-860b-1c7b97625f3d"] post https://api.individual.githubcopilot.com/chat/completions succeeded with status 200 in 3499ms
+
+2025-12-02T05:21:44.647Z [INFO] [log_fdb3d9, x-request-id: "00000-f759d3be-7745-4e4c-b7d6-35e86a389c82"] post https://api.individual.githubcopilot.com/chat/completions succeeded with status 200 in 3942ms
+
+2025-12-02T05:21:48.806Z [INFO] [log_934e47, x-request-id: "00000-9f0a2f05-d196-44a0-ac28-6f64dfef789d"] post https://api.individual.githubcopilot.com/chat/completions succeeded with status 200 in 3079ms
+

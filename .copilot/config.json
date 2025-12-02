@@ -1,0 +1,16 @@
+{
+  "banner": "never",
+  "theme": "auto",
+  "trusted_folders": [
+    "C:\\Users\\endri\\HAWZX\\HAWZX-AI",
+    "C:\\Users\\endri\\Desktop\\Projetos\\HAWZX-AI"
+  ],
+  "asked_setup_terminals": [
+    "vscode"
+  ],
+  "last_logged_in_user": {
+    "host": "https://github.com",
+    "login": "endrioo123-hue"
+  },
+  "render_markdown": true
+}

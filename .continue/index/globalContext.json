@@ -1,0 +1,23 @@
+{
+  "lastSelectedProfileForWorkspace": {
+    "file:///c%3A/Users/endri/HAWZX:::personal": "local",
+    "file:///c%3A/Users/endri/HAWZX/HAWZX-AI:::personal": "local",
+    "file:///c%3A/Users/endri/Desktop/Projetos/HAWZX-AI:::personal": "local"
+  },
+  "lastSelectedOrgIdForWorkspace": {
+    "file:///c%3A/Users/endri/HAWZX": "personal",
+    "file:///c%3A/Users/endri/HAWZX/HAWZX-AI": "personal",
+    "file:///c%3A/Users/endri/Desktop/Projetos/HAWZX-AI": "personal"
+  },
+  "selectedModelsByProfileId": {
+    "local": {
+      "chat": null,
+      "edit": null,
+      "apply": null,
+      "embed": "Transformers.js (Built-In)",
+      "autocomplete": null,
+      "rerank": null,
+      "summarize": null
+    }
+  }
+}
