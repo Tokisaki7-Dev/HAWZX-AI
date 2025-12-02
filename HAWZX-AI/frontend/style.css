@@ -1,0 +1,70 @@
+body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: transparent; /* Essential for overlay */
+    font-family: Arial, sans-serif;
+    color: white;
+}
+
+#overlay-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none; /* Allows clicks to pass through by default */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end; /* Align items to the right */
+    justify-content: flex-end; /* Align items to the bottom */
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+#mascot-avatar {
+    width: 150px;
+    height: auto;
+    pointer-events: all; /* Make mascot clickable/draggable if needed */
+    margin-bottom: 10px;
+}
+
+#chat-window {
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 10px;
+    padding: 10px;
+    width: 300px;
+    max-height: 200px;
+    display: flex;
+    flex-direction: column;
+    pointer-events: all; /* Make chat interactive */
+    margin-bottom: 10px;
+}
+
+#chat-messages {
+    flex-grow: 1;
+    overflow-y: auto;
+    margin-bottom: 10px;
+    word-wrap: break-word;
+}
+
+#chat-input {
+    width: calc(100% - 20px);
+    padding: 8px;
+    border: none;
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+#chat-input::placeholder {
+    color: #ccc;
+}
+
+#game-status-widget {
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 5px;
+    padding: 5px 10px;
+    pointer-events: all;
+    font-size: 0.9em;
+}

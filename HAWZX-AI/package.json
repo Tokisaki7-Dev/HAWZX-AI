@@ -1,0 +1,15 @@
+{
+  "name": "hawzx-ai-overlay",
+  "version": "0.1.0",
+  "description": "Interface de overlay para o HAWZX-AI.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [],
+  "author": "HAWZX",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^28.0.0"
+  }
+}

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HAWZX AI Overlay</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="overlay-container">
+        <!-- Mascote Animado -->
+        <img id="mascot-avatar" src="/static/idle.gif" alt="HAWZX AI Mascot">
+
+        <!-- Chat Window -->
+        <div id="chat-window">
+            <div id="chat-messages"></div>
+            <input type="text" id="chat-input" placeholder="Converse com HAWZX...">
+        </div>
+
+        <!-- Outros Widgets do Overlay (ex: status do jogo) -->
+        <div id="game-status-widget">
+            <span>HP: 100</span> | <span>Mana: 50</span>
+        </div>
+    </div>
+
+    <script src="/static/renderer.js"></script>
+</body>
+</html>
