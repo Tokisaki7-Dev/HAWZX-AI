@@ -111,12 +111,15 @@ async function loadChunk(chunkX, chunkY) {
         
         const data = await response.json();
         
-        // Create image from base64
+        // Create image from base64 (backend already returns data URL prefix)
         const img = new Image();
+        const imageSrc = data.image.startsWith('data:image')
+            ? data.image
+            : `data:image/png;base64,${data.image}`;
         await new Promise((resolve, reject) => {
             img.onload = resolve;
             img.onerror = reject;
-            img.src = `data:image/png;base64,${data.image}`;
+            img.src = imageSrc;
         });
         
         const chunk = {
