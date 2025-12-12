@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 Noki AI - JRPG Procedural Infinito</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="game-container">
+        <header class="game-header">
+            <h1>🎮 <span class="gradient-text">Noki AI</span></h1>
+            <p class="subtitle">Mundo Infinito Procedural • Estilo Minecraft</p>
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <span class="stat-label">FPS:</span>
+                    <span id="fps-counter" class="stat-value">60</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Chunks:</span>
+                    <span id="chunk-counter" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Bioma:</span>
+                    <span id="biome-display" class="stat-value">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Seed:</span>
+                    <span id="world-seed" class="stat-value">-</span>
+                </div>
+            </div>
+        </header>
+        
+        <main class="game-main">
+            <canvas id="gameCanvas" width="800" height="600"></canvas>
+            
+            <div id="loading-screen" class="loading-screen">
+                <div class="loading-content">
+                    <div class="spinner"></div>
+                    <h2>Gerando Mundo...</h2>
+                    <p id="loading-message">Criando terreno procedural</p>
+                    <div class="loading-bar">
+                        <div id="loading-progress" class="loading-bar-fill"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <aside class="controls-panel">
+            <h3>⌨️ Controles</h3>
+            <div class="control-group">
+                <div class="control-item">
+                    <kbd>WASD</kbd>
+                    <span>Mover</span>
+                </div>
+                <div class="control-item">
+                    <kbd>SPACE</kbd>
+                    <span>Pular (2x para duplo)</span>
+                </div>
+                <div class="control-item">
+                    <kbd>SHIFT</kbd>
+                    <span>Correr</span>
+                </div>
+                <div class="control-item">
+                    <kbd>F3</kbd>
+                    <span>Debug Info</span>
+                </div>
+            </div>
+            
+            <div class="info-panel">
+                <h4>ℹ️ Sobre o Jogo</h4>
+                <p>Mundo infinito gerado proceduralmente com sistema de chunks estilo Minecraft.</p>
+                <ul>
+                    <li>6 biomas únicos</li>
+                    <li>Física avançada com gravidade</li>
+                    <li>Pulo duplo e coyote time</li>
+                    <li>Geração infinita de terreno</li>
+                    <li>Detecção de colisão precisa</li>
+                    <li>Sistema de câmera suave</li>
+                </ul>
+            </div>
+        </aside>
+    </div>
+    
+    <footer class="game-footer">
+        <p>Desenvolvido com ❤️ usando IA Procedural</p>
+    </footer>
+    
+    <script src="/static/combat.js"></script>
+    <script src="/static/minecraft_game.js"></script>
+</body>
+</html>

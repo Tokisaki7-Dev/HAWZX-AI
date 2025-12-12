@@ -4,3 +4,4 @@ python-dotenv
 requests
 Pillow
 supabase>=2.25.1
+noise
