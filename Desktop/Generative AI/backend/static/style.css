@@ -46,11 +46,12 @@ body {
 /* Header */
 .game-header {
     grid-column: 1 / -1;
-    background: linear-gradient(135deg, var(--bg-medium) 0%, var(--bg-light) 100%);
+    background: var(--bg-medium);
     padding: 30px;
-    border-radius: 12px;
+    border-radius: 0;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    border: 2px solid #3a4560;
+    outline: 1px solid #0b0f1d;
 }
 
 .game-header h1 {
@@ -106,18 +107,21 @@ body {
 .game-main {
     position: relative;
     background: var(--bg-medium);
-    border-radius: 12px;
+    border-radius: 0;
     padding: 20px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+    border: 2px solid #3a4560;
+    outline: 1px solid #0b0f1d;
 }
 
 #gameCanvas {
     display: block;
     margin: 0 auto;
-    border-radius: 8px;
-    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
-    background: #000;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    border: 2px solid #3a4560;
+    outline: 1px solid #0b0f1d;
+    background: #0b0f1d;
 }
 
 /* Loading Screen */
@@ -190,10 +194,11 @@ body {
 /* Controls Panel */
 .controls-panel {
     background: var(--bg-medium);
-    border-radius: 12px;
+    border-radius: 0;
     padding: 25px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+    border: 2px solid #3a4560;
+    outline: 1px solid #0b0f1d;
     max-height: calc(100vh - 200px);
     overflow-y: auto;
 }
