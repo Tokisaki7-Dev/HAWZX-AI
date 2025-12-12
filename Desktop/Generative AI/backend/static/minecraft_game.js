@@ -10,7 +10,7 @@ const CONFIG = {
     CANVAS_HEIGHT: 600,
     CHUNK_SIZE: 512,
     BLOCK_SIZE: 16,
-    PLAYER_SIZE: 32,
+    PLAYER_SIZE: 48,  // Increased from 32 to 48 for better visibility
     GRAVITY: 980,
     JUMP_STRENGTH: 400,
     MOVE_SPEED: 200,
@@ -30,7 +30,7 @@ const world = {
 // === PLAYER STATE ===
 const player = {
     x: CONFIG.CANVAS_WIDTH / 2,
-    y: 100,
+    y: 150,  // Start at 150px instead of 100px to be closer to ground
     vx: 0,
     vy: 0,
     width: CONFIG.PLAYER_SIZE,
@@ -367,13 +367,39 @@ function render() {
         }
     }
     
-    // Render player
-    ctx.fillStyle = player.onGround ? '#00ff00' : '#ff0000';
+    // Render player with better visibility
+    // Body
+    ctx.fillStyle = '#4A90E2';  // Nice blue color
     ctx.fillRect(player.x, player.y, player.width, player.height);
     
-    // Player direction indicator
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(player.x + player.width/2 - 2, player.y + 4, 4, 4);
+    // Border/outline for better visibility
+    ctx.strokeStyle = '#2C5F8D';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(player.x, player.y, player.width, player.height);
+    
+    // Face - eyes
+    ctx.fillStyle = '#FFFFFF';
+    const eyeSize = 8;
+    const eyeY = player.y + player.height * 0.3;
+    ctx.fillRect(player.x + player.width * 0.25 - eyeSize/2, eyeY, eyeSize, eyeSize);
+    ctx.fillRect(player.x + player.width * 0.75 - eyeSize/2, eyeY, eyeSize, eyeSize);
+    
+    // Pupils
+    ctx.fillStyle = '#000000';
+    const pupilSize = 4;
+    ctx.fillRect(player.x + player.width * 0.25 - pupilSize/2, eyeY + 2, pupilSize, pupilSize);
+    ctx.fillRect(player.x + player.width * 0.75 - pupilSize/2, eyeY + 2, pupilSize, pupilSize);
+    
+    // Mouth
+    ctx.fillStyle = '#000000';
+    const mouthY = player.y + player.height * 0.6;
+    ctx.fillRect(player.x + player.width * 0.3, mouthY, player.width * 0.4, 3);
+    
+    // Ground indicator (feet glow when on ground)
+    if (player.onGround) {
+        ctx.fillStyle = 'rgba(0, 255, 0, 0.5)';
+        ctx.fillRect(player.x, player.y + player.height - 4, player.width, 4);
+    }
     
     ctx.restore();
     
@@ -536,6 +562,25 @@ async function init() {
         const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 5000));
         
         await Promise.race([loadPromise, timeoutPromise]);
+        
+            // Try to find ground and spawn player on it
+            updateLoadingMessage('Encontrando terreno...');
+            const spawnChunk = world.chunks.get(getChunkKey(playerChunk.chunkX, playerChunk.chunkY));
+            if (spawnChunk && spawnChunk.collisionMap) {
+                // Find ground at player's X position
+                const localX = Math.floor((player.x - spawnChunk.worldX) / CONFIG.BLOCK_SIZE);
+                if (localX >= 0 && localX < spawnChunk.collisionMap[0].length) {
+                    // Find first solid block from top
+                    for (let y = 0; y < spawnChunk.collisionMap.length; y++) {
+                        if (spawnChunk.collisionMap[y][localX]) {
+                            // Spawn player on top of this block
+                            player.y = spawnChunk.worldY + (y * CONFIG.BLOCK_SIZE) - player.height;
+                            console.log(`👤 Player spawned at ground level: Y=${player.y}`);
+                            break;
+                        }
+                    }
+                }
+            }
         
         updateLoadingProgress(100);
         updateLoadingMessage('Mundo pronto!');

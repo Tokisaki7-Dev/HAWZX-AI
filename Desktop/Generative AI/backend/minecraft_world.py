@@ -175,8 +175,8 @@ class MinecraftWorldGenerator:
                         color = random.choice(self.BLOCK_TYPES[biome]['stone'])
                 
                 elif y < surface_y:
-                    # Céu/ar
-                    color = (135, 206, 235) if y < 5 else (100, 149, 237)
+                    # Céu/ar - consistent sky color
+                    color = (135, 206, 235)
                 
                 elif y == surface_y:
                     # Superfície
@@ -215,15 +215,27 @@ class MinecraftWorldGenerator:
         return img
     
     def _draw_block(self, pixels, x: int, y: int, color: Tuple[int, int, int]):
-        """Desenha um bloco com textura"""
+        """Desenha um bloco com textura melhorada tipo Minecraft"""
+        base_r, base_g, base_b = color
+        
         for px in range(self.BLOCK_SIZE):
             for py in range(self.BLOCK_SIZE):
-                # Variação de cor para textura
-                variation = random.randint(-10, 10)
-                final_color = tuple(max(0, min(255, c + variation)) for c in color)
+                if x + px >= 512 or y + py >= 512:
+                    continue
                 
-                if x + px < 512 and y + py < 512:
-                    pixels[x + px, y + py] = final_color
+                # Add subtle gradient for 3D effect
+                # Lighter at top-left, darker at bottom-right
+                gradient_factor = 1.0 - (px + py) / (self.BLOCK_SIZE * 2) * 0.15
+                
+                # Add very subtle noise (reduced from ±10 to ±3)
+                noise_variation = random.randint(-3, 3)
+                
+                # Apply both effects
+                r = int(max(0, min(255, base_r * gradient_factor + noise_variation)))
+                g = int(max(0, min(255, base_g * gradient_factor + noise_variation)))
+                b = int(max(0, min(255, base_b * gradient_factor + noise_variation)))
+                
+                pixels[x + px, y + py] = (r, g, b)
     
     def _add_structures(self, img: Image.Image, draw: ImageDraw.Draw, 
                        biome: str, heightmap: List[int]):
@@ -303,16 +315,16 @@ class MinecraftWorldGenerator:
         )
     
     def _draw_grid(self, draw: ImageDraw.Draw):
-        """Desenha grid de blocos (opcional)"""
-        grid_color = (0, 0, 0, 30)  # Preto semi-transparente
-        
-        # Linhas verticais
+        """Desenha grid de blocos (bordas sutis nos blocos sólidos)"""
+        # Light grid to show block boundaries
         for x in range(0, self.CHUNK_SIZE, self.BLOCK_SIZE):
-            draw.line([(x, 0), (x, self.CHUNK_SIZE)], fill=grid_color, width=1)
-        
-        # Linhas horizontais
-        for y in range(0, self.CHUNK_SIZE, self.BLOCK_SIZE):
-            draw.line([(0, y), (self.CHUNK_SIZE, y)], fill=grid_color, width=1)
+            for y in range(0, self.CHUNK_SIZE, self.BLOCK_SIZE):
+                # Draw subtle border around each block
+                draw.rectangle(
+                    [x, y, x + self.BLOCK_SIZE - 1, y + self.BLOCK_SIZE - 1],
+                    outline=(0, 0, 0, 40),
+                    width=1
+                )
     
     def get_collision_map(self, chunk_x: int, chunk_y: int) -> List[List[bool]]:
         """Retorna mapa de colisão para o chunk (True = sólido, False = ar)"""
