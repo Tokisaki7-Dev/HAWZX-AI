@@ -1,0 +1,12 @@
+# Configuração para Google App Engine
+runtime: python311
+
+entrypoint: uvicorn main:app --host 0.0.0.0 --port $PORT
+
+env_variables:
+  STABILITY_API_KEY: "AIzaSyCegsTQvSQrS4giNDV_19svmMJrdD6i_ow"
+
+automatic_scaling:
+  target_cpu_utilization: 0.65
+  min_instances: 0
+  max_instances: 10
