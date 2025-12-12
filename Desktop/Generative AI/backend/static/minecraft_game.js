@@ -9,7 +9,7 @@ const CONFIG = {
     CANVAS_WIDTH: 800,
     CANVAS_HEIGHT: 600,
     CHUNK_SIZE: 512,
-    BLOCK_SIZE: 16,
+    BLOCK_SIZE: 8, // Smaller tiles for JRPG-style detail
     PLAYER_SIZE: 48,  // Increased from 32 to 48 for better visibility
     GRAVITY: 980,
     JUMP_STRENGTH: 400,
@@ -158,14 +158,27 @@ function createPlaceholderChunk(chunkX, chunkY) {
     ctx.fillStyle = '#2a9d8f';
     ctx.fillRect(0, 0, CONFIG.CHUNK_SIZE, CONFIG.CHUNK_SIZE);
     
+    // Draw a simple grass ground at bottom
+    const tileCount = CONFIG.CHUNK_SIZE / CONFIG.BLOCK_SIZE;
+    const groundRows = Math.max(4, Math.floor(tileCount * 0.15));
+    ctx.fillStyle = '#3da35d';
+    ctx.fillRect(0, CONFIG.CHUNK_SIZE - groundRows * CONFIG.BLOCK_SIZE, CONFIG.CHUNK_SIZE, groundRows * CONFIG.BLOCK_SIZE);
+    
     const img = new Image();
     img.src = canvas.toDataURL();
     
+    // Build collision map with solid ground rows
+    const rows = tileCount;
+    const cols = tileCount;
+    const collisionMap = Array.from({ length: rows }, (_, y) =>
+        Array.from({ length: cols }, () => y >= rows - groundRows)
+    );
+
     const chunk = {
         x: chunkX,
         y: chunkY,
         image: img,
-        collisionMap: Array(32).fill(null).map(() => Array(32).fill(false)),
+        collisionMap,
         biome: 'plains',
         worldX: chunkX * CONFIG.CHUNK_SIZE,
         worldY: chunkY * CONFIG.CHUNK_SIZE
@@ -574,13 +587,21 @@ async function init() {
                 const localX = Math.floor((player.x - spawnChunk.worldX) / CONFIG.BLOCK_SIZE);
                 if (localX >= 0 && localX < spawnChunk.collisionMap[0].length) {
                     // Find first solid block from top
+                    let placed = false;
                     for (let y = 0; y < spawnChunk.collisionMap.length; y++) {
                         if (spawnChunk.collisionMap[y][localX]) {
                             // Spawn player on top of this block
                             player.y = spawnChunk.worldY + (y * CONFIG.BLOCK_SIZE) - player.height;
                             console.log(`👤 Player spawned at ground level: Y=${player.y}`);
+                            placed = true;
                             break;
                         }
+                    }
+                    // Fallback: place near bottom if no solid block found in column
+                    if (!placed) {
+                        const fallbackY = spawnChunk.worldY + CONFIG.CHUNK_SIZE - (CONFIG.BLOCK_SIZE * 6) - player.height;
+                        player.y = fallbackY;
+                        console.log(`👤 Player fallback spawn at Y=${player.y}`);
                     }
                 }
             }

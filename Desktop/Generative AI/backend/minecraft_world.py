@@ -9,8 +9,8 @@ class MinecraftWorldGenerator:
     """Gerador de mundo infinito com chunks procedurais estilo Minecraft"""
     
     CHUNK_SIZE = 512  # Pixels por chunk
-    BLOCK_SIZE = 16   # Pixels por bloco
-    BLOCKS_PER_CHUNK = CHUNK_SIZE // BLOCK_SIZE  # 32 blocos por chunk
+    BLOCK_SIZE = 8    # Pixels por bloco (tiles menores para look JRPG)
+    BLOCKS_PER_CHUNK = CHUNK_SIZE // BLOCK_SIZE  # 64 blocos por chunk
     
     # Alturas de terreno por bioma
     TERRAIN_HEIGHTS = {
@@ -25,32 +25,32 @@ class MinecraftWorldGenerator:
     # Blocos por bioma
     BLOCK_TYPES = {
         'plains': {
-            'surface': [(124, 252, 0), (34, 139, 34)],  # Grama
-            'underground': [(139, 90, 43), (101, 67, 33)],  # Terra
-            'stone': [(128, 128, 128), (105, 105, 105)]  # Pedra
+            'surface': [(139, 217, 114), (114, 191, 92)],  # Grama suave
+            'underground': [(171, 140, 104), (152, 122, 92)],  # Terra clara
+            'stone': [(150, 150, 160), (130, 130, 140)]  # Pedra suave
         },
         'forest': {
-            'surface': [(34, 139, 34), (0, 100, 0)],
-            'tree_trunk': [(101, 67, 33), (139, 90, 43)],
-            'leaves': [(0, 128, 0), (34, 139, 34)],
-            'underground': [(139, 90, 43)],
-            'stone': [(128, 128, 128)]
+            'surface': [(98, 175, 114), (78, 150, 95)],
+            'tree_trunk': [(120, 86, 60), (99, 68, 46)],
+            'leaves': [(76, 148, 94), (62, 126, 79)],
+            'underground': [(156, 125, 96)],
+            'stone': [(140, 140, 150)]
         },
         'mountains': {
-            'surface': [(169, 169, 169), (128, 128, 128)],  # Pedra
-            'snow': [(255, 250, 250), (240, 240, 240)],  # Neve
-            'underground': [(105, 105, 105)],
-            'stone': [(64, 64, 64)]
+            'surface': [(170, 180, 190), (150, 160, 170)],  # Pedra suave
+            'snow': [(245, 248, 250), (232, 236, 240)],  # Neve clara
+            'underground': [(120, 120, 130)],
+            'stone': [(90, 95, 105)]
         },
         'desert': {
-            'surface': [(237, 201, 175), (244, 164, 96)],  # Areia
-            'underground': [(210, 180, 140), (222, 184, 135)],
-            'stone': [(139, 90, 43)]
+            'surface': [(236, 209, 164), (228, 192, 139)],  # Areia suave
+            'underground': [(214, 184, 146), (200, 170, 130)],
+            'stone': [(156, 118, 78)]
         },
         'ocean': {
-            'water': [(0, 105, 148), (25, 118, 210)],
-            'sand': [(237, 201, 175)],
-            'stone': [(128, 128, 128)]
+            'water': [(64, 149, 209), (52, 134, 194)],
+            'sand': [(232, 205, 170)],
+            'stone': [(140, 150, 160)]
         }
     }
     
