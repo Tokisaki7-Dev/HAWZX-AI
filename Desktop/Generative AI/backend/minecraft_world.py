@@ -131,80 +131,89 @@ class MinecraftWorldGenerator:
             # Normaliza para faixa do bioma
             normalized = (height + 1) / 2  # -1~1 para 0~1
             final_height = base_height[0] + normalized * (base_height[1] - base_height[0])
-            
-            # Converte para blocos (0 = topo, 32 = fundo)
-            block_height = int(final_height * self.BLOCKS_PER_CHUNK)
-            heightmap.append(block_height)
-        
-        return heightmap
-    
-    def generate_chunk(self, chunk_x: int, chunk_y: int) -> Image.Image:
-        """Gera um chunk completo estilo Minecraft"""
-        
-        # Verifica cache
-        cache_key = (chunk_x, chunk_y)
-        if cache_key in self.chunks_cache:
-            return self.chunks_cache[cache_key]
-        
-        # Determina bioma
-        biome = self.get_biome(chunk_x, chunk_y)
-        
-        # Gera heightmap
-        heightmap = self.generate_heightmap(chunk_x, chunk_y, biome)
-        
-        # Cria imagem
-        img = Image.new('RGB', (self.CHUNK_SIZE, self.CHUNK_SIZE))
-        draw = ImageDraw.Draw(img)
-        pixels = img.load()
-        
-        # Desenha blocos
-        for x in range(self.BLOCKS_PER_CHUNK):
-            surface_y = heightmap[x]
-            
+            """Gera um chunk top-down estilo JRPG 16-bit"""
+
+            cache_key = (chunk_x, chunk_y)
+            if cache_key in self.chunks_cache:
+                return self.chunks_cache[cache_key]
+
+            tiles, collision_map = self.generate_tilemap(chunk_x, chunk_y)
+
+            img = Image.new('RGB', (self.CHUNK_SIZE, self.CHUNK_SIZE))
+            draw = ImageDraw.Draw(img)
+            pixels = img.load()
+
             for y in range(self.BLOCKS_PER_CHUNK):
-                block_x = x * self.BLOCK_SIZE
-                block_y = y * self.BLOCK_SIZE
-                
-                # Determina tipo de bloco
-                if biome == 'ocean':
-                    if y < 10:  # Nível do mar
-                        color = random.choice(self.BLOCK_TYPES[biome]['water'])
-                    elif y < surface_y:
-                        color = random.choice(self.BLOCK_TYPES[biome]['sand'])
+                for x in range(self.BLOCKS_PER_CHUNK):
+                    tx = x * self.BLOCK_SIZE
+                    ty = y * self.BLOCK_SIZE
+                    tile = tiles[y][x]
+                    self._draw_tile(pixels, tx, ty, tile)
+
+            # Grid sutil para vibe de tileset
+            self._draw_grid(draw)
+
+            self.chunks_cache[cache_key] = img
+
+            # Limita cache
+            if len(self.chunks_cache) > 50:
+                oldest_keys = list(self.chunks_cache.keys())[:len(self.chunks_cache) - 50]
+                for key in oldest_keys:
+                    del self.chunks_cache[key]
+
+            return img
+
+        def generate_tilemap(self, chunk_x: int, chunk_y: int):
+            """Gera tiles top-down e mapa de colisão"""
+            tile_count = self.BLOCKS_PER_CHUNK
+            tiles: List[List[str]] = []
+            collision: List[List[bool]] = []
+
+            rng = random.Random(self.seed + chunk_x * 92821 + chunk_y * 49157)
+
+            for y in range(tile_count):
+                row = []
+                crow = []
+                for x in range(tile_count):
+                    gx = chunk_x * tile_count + x
+                    gy = chunk_y * tile_count + y
+
+                    elev = noise.pnoise2(gx / 30.0, gy / 30.0, octaves=4, persistence=0.5, base=self.seed)
+                    moist = noise.pnoise2(gx / 25.0, gy / 25.0, octaves=3, persistence=0.55, base=self.seed + 5000)
+
+                    # Classifica tile
+                    if elev < -0.35:
+                        tile = 'deep_water'
+                    elif elev < -0.15:
+                        tile = 'water'
+                    elif elev < 0.05:
+                        tile = 'sand'
+                    elif elev > 0.65:
+                        tile = 'mountain'
+                    elif elev > 0.45:
+                        tile = 'hill'
                     else:
-                        color = random.choice(self.BLOCK_TYPES[biome]['stone'])
-                
-                elif y < surface_y:
-                    # Céu/ar - consistent sky color
-                    color = (135, 206, 235)
-                
-                elif y == surface_y:
-                    # Superfície
-                    if biome == 'mountains' and surface_y < 8:
-                        color = random.choice(self.BLOCK_TYPES[biome]['snow'])
-                    else:
-                        color = random.choice(self.BLOCK_TYPES[biome]['surface'])
-                
-                elif y < surface_y + 3:
-                    # Subsuperfície
-                    color = random.choice(self.BLOCK_TYPES[biome]['underground'])
-                
-                else:
-                    # Pedra profunda
-                    color = random.choice(self.BLOCK_TYPES[biome]['stone'])
-                
-                # Desenha bloco com variação
-                self._draw_block(pixels, block_x, block_y, color)
-        
-        # Adiciona estruturas (árvores, rochas, etc.)
-        self._add_structures(img, draw, biome, heightmap)
-        
-        # Grid de blocos (opcional)
-        self._draw_grid(draw)
-        
-        # Armazena no cache
-        self.chunks_cache[cache_key] = img
-        
+                        tile = 'grass'
+
+                    # Umidade influencia floresta
+                    if tile == 'grass' and moist > 0.25 and rng.random() < 0.35 + moist * 0.2:
+                        tile = 'forest'
+
+                    # Pequenos caminhos
+                    if tile == 'grass' and rng.random() < 0.04:
+                        tile = 'path'
+
+                    # Rochas em colinas/areia
+                    if tile in ['hill', 'sand'] and rng.random() < 0.05:
+                        tile = 'rock'
+
+                    solid_tiles = {'mountain', 'rock', 'forest', 'deep_water', 'water'}
+                    row.append(tile)
+                    crow.append(tile in solid_tiles)
+                tiles.append(row)
+                collision.append(crow)
+
+            return tiles, collision
         # Limita cache (mantém apenas 9 chunks: atual + 8 adjacentes)
         if len(self.chunks_cache) > 50:
             # Remove chunks mais antigos
@@ -236,6 +245,45 @@ class MinecraftWorldGenerator:
                 b = int(max(0, min(255, base_b * gradient_factor + noise_variation)))
                 
                 pixels[x + px, y + py] = (r, g, b)
+
+    def _draw_tile(self, pixels, x: int, y: int, tile: str):
+        """Desenha tile 8px com aparência 16-bit"""
+        palette = {
+            'grass': [(123, 193, 102), (110, 176, 91), (138, 207, 118)],
+            'forest': [(82, 143, 92), (68, 124, 78), (96, 161, 104)],
+            'path': [(176, 150, 118), (162, 136, 105)],
+            'sand': [(230, 205, 170), (216, 190, 154)],
+            'rock': [(156, 150, 140), (134, 128, 118)],
+            'hill': [(146, 169, 132), (126, 150, 117)],
+            'mountain': [(128, 135, 142), (109, 116, 123)],
+            'water': [(74, 140, 201), (62, 128, 189)],
+            'deep_water': [(54, 110, 171), (42, 96, 157)]
+        }
+
+        colors = palette.get(tile, palette['grass'])
+        base = random.choice(colors)
+
+        for px in range(self.BLOCK_SIZE):
+            for py in range(self.BLOCK_SIZE):
+                rx = x + px
+                ry = y + py
+                if rx >= self.CHUNK_SIZE or ry >= self.CHUNK_SIZE:
+                    continue
+
+                # Dither pattern
+                dither = ((px + py) % 2 == 0)
+                variation = -6 if dither else 6
+                gradient = 1.0 - (py / (self.BLOCK_SIZE * 4))
+                r = int(max(0, min(255, base[0] * gradient + variation)))
+                g = int(max(0, min(255, base[1] * gradient + variation)))
+                b = int(max(0, min(255, base[2] * gradient + variation)))
+
+                # Extra highlight for path and sand
+                if tile in ['path', 'sand'] and dither:
+                    r = min(255, r + 10)
+                    g = min(255, g + 8)
+
+                pixels[rx, ry] = (r, g, b)
     
     def _add_structures(self, img: Image.Image, draw: ImageDraw.Draw, 
                        biome: str, heightmap: List[int]):
@@ -328,19 +376,8 @@ class MinecraftWorldGenerator:
     
     def get_collision_map(self, chunk_x: int, chunk_y: int) -> List[List[bool]]:
         """Retorna mapa de colisão para o chunk (True = sólido, False = ar)"""
-        biome = self.get_biome(chunk_x, chunk_y)
-        heightmap = self.generate_heightmap(chunk_x, chunk_y, biome)
-        
-        collision_map = []
-        for y in range(self.BLOCKS_PER_CHUNK):
-            row = []
-            for x in range(self.BLOCKS_PER_CHUNK):
-                # Sólido se Y >= altura da superfície
-                is_solid = y >= heightmap[x]
-                row.append(is_solid)
-            collision_map.append(row)
-        
-        return collision_map
+        _, collision = self.generate_tilemap(chunk_x, chunk_y)
+        return collision
     
     def get_chunk_at_position(self, world_x: int, world_y: int) -> Tuple[int, int]:
         """Converte posição do mundo para coordenadas de chunk"""

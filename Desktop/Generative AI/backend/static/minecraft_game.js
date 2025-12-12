@@ -10,12 +10,9 @@ const CONFIG = {
     CANVAS_HEIGHT: 600,
     CHUNK_SIZE: 512,
     BLOCK_SIZE: 8, // Smaller tiles for JRPG-style detail
-    PLAYER_SIZE: 48,  // Increased from 32 to 48 for better visibility
-    GRAVITY: 980,
-    JUMP_STRENGTH: 400,
-    MOVE_SPEED: 200,
-    RUN_SPEED: 350,
-    TERMINAL_VELOCITY: 500,
+    PLAYER_SIZE: 24,  // JRPG chibi size
+    MOVE_SPEED: 140,
+    RUN_SPEED: 220,
     WORLD_SEED: Math.floor(Math.random() * 1000000)
 };
 
@@ -30,15 +27,12 @@ const world = {
 // === PLAYER STATE ===
 const player = {
     x: CONFIG.CANVAS_WIDTH / 2,
-    y: 150,  // Start at 150px instead of 100px to be closer to ground
+    y: CONFIG.CANVAS_HEIGHT / 2,
     vx: 0,
     vy: 0,
     width: CONFIG.PLAYER_SIZE,
     height: CONFIG.PLAYER_SIZE,
-    onGround: false,
-    canDoubleJump: true,
-    jumpBuffer: 0,
-    coyoteTime: 0,
+    facing: 'down',
     hp: 100,
     maxHp: 100,
     level: 1,
@@ -206,30 +200,25 @@ async function loadSurroundingChunks(centerChunkX, centerChunkY, radius = 2) {
 
 // === COLLISION DETECTION ===
 function checkCollision(x, y, width, height) {
-    const { chunkX, chunkY } = getChunkCoords(x + width/2, y + height);
-    const chunk = world.chunks.get(getChunkKey(chunkX, chunkY));
-    
-    if (!chunk || !chunk.collisionMap) {
-        return false;
-    }
-    
-    // Convert world coordinates to chunk-local coordinates
-    const localX = x - chunk.worldX;
-    const localY = y - chunk.worldY;
-    
-    // Check corners and center
-    const points = [
-        { x: localX, y: localY },  // Top-left
-        { x: localX + width, y: localY },  // Top-right
-        { x: localX, y: localY + height },  // Bottom-left
-        { x: localX + width, y: localY + height },  // Bottom-right
-        { x: localX + width/2, y: localY + height }  // Bottom-center
+    // Sample corners and center across chunks
+    const samples = [
+        { sx: x, sy: y },
+        { sx: x + width, sy: y },
+        { sx: x, sy: y + height },
+        { sx: x + width, sy: y + height },
+        { sx: x + width / 2, sy: y + height / 2 }
     ];
-    
-    for (const point of points) {
-        const blockX = Math.floor(point.x / CONFIG.BLOCK_SIZE);
-        const blockY = Math.floor(point.y / CONFIG.BLOCK_SIZE);
-        
+
+    for (const p of samples) {
+        const { chunkX, chunkY } = getChunkCoords(p.sx, p.sy);
+        const chunk = world.chunks.get(getChunkKey(chunkX, chunkY));
+        if (!chunk || !chunk.collisionMap) continue;
+
+        const localX = p.sx - chunk.worldX;
+        const localY = p.sy - chunk.worldY;
+        const blockX = Math.floor(localX / CONFIG.BLOCK_SIZE);
+        const blockY = Math.floor(localY / CONFIG.BLOCK_SIZE);
+
         if (blockY >= 0 && blockY < chunk.collisionMap.length &&
             blockX >= 0 && blockX < chunk.collisionMap[0].length) {
             if (chunk.collisionMap[blockY][blockX]) {
@@ -237,115 +226,38 @@ function checkCollision(x, y, width, height) {
             }
         }
     }
-    
     return false;
-}
-
-function checkGroundCollision() {
-    return checkCollision(player.x, player.y + 2, player.width, player.height);
 }
 
 // === PHYSICS ===
 function updatePhysics(deltaTime) {
-    const dt = Math.min(deltaTime, 0.033); // Cap at 30 FPS for stability
-    
-    // Gravity
-    if (!player.onGround) {
-        player.vy += CONFIG.GRAVITY * dt;
-        player.vy = Math.min(player.vy, CONFIG.TERMINAL_VELOCITY);
-    }
-    
-    // Horizontal movement
-    let targetVx = 0;
+    const dt = Math.min(deltaTime, 0.033);
     const isRunning = keys['shift'];
-    const maxSpeed = isRunning ? CONFIG.RUN_SPEED : CONFIG.MOVE_SPEED;
-    const acceleration = player.onGround ? 1000 : 600; // 60% air control
-    
-    if (keys['a'] || keys['arrowleft']) {
-        targetVx = -maxSpeed;
+    const speed = isRunning ? CONFIG.RUN_SPEED : CONFIG.MOVE_SPEED;
+
+    let dx = 0;
+    let dy = 0;
+    if (keys['a'] || keys['arrowleft']) { dx -= 1; player.facing = 'left'; }
+    if (keys['d'] || keys['arrowright']) { dx += 1; player.facing = 'right'; }
+    if (keys['w'] || keys['arrowup']) { dy -= 1; player.facing = 'up'; }
+    if (keys['s'] || keys['arrowdown']) { dy += 1; player.facing = 'down'; }
+
+    // Normalize diagonal speed
+    if (dx !== 0 || dy !== 0) {
+        const len = Math.hypot(dx, dy);
+        dx /= len; dy /= len;
     }
-    if (keys['d'] || keys['arrowright']) {
-        targetVx = maxSpeed;
-    }
-    
-    // Apply acceleration
-    if (targetVx !== 0) {
-        player.vx += (targetVx - player.vx) * acceleration * dt / 1000;
-    } else {
-        // Apply friction
-        const friction = player.onGround ? 0.8 : 0.98;
-        player.vx *= Math.pow(friction, dt * 60);
-        if (Math.abs(player.vx) < 1) player.vx = 0;
-    }
-    
-    // Jump
-    if (player.jumpBuffer > 0) {
-        player.jumpBuffer -= dt;
-    }
-    
-    if (player.coyoteTime > 0 && !player.onGround) {
-        player.coyoteTime -= dt;
-    }
-    
-    if (keys['space'] || keys['w'] || keys['arrowup']) {
-        if (!keys._jumpPressed) {
-            keys._jumpPressed = true;
-            player.jumpBuffer = 0.1;
-            
-            // Ground jump
-            if (player.onGround || player.coyoteTime > 0) {
-                player.vy = -CONFIG.JUMP_STRENGTH;
-                player.canDoubleJump = true;
-                player.coyoteTime = 0;
-            }
-            // Double jump
-            else if (player.canDoubleJump) {
-                player.vy = -CONFIG.JUMP_STRENGTH * 0.875;
-                player.canDoubleJump = false;
-            }
-        }
-    } else {
-        keys._jumpPressed = false;
-        
-        // Variable jump height
-        if (player.vy < 0) {
-            player.vy *= 0.95;
-        }
-    }
-    
-    // Update position
-    const nextX = player.x + player.vx * dt;
-    const nextY = player.y + player.vy * dt;
-    
-    // Horizontal collision
+
+    const nextX = player.x + dx * speed * dt;
+    const nextY = player.y + dy * speed * dt;
+
+    // Move with collision resolution per axis
     if (!checkCollision(nextX, player.y, player.width, player.height)) {
         player.x = nextX;
-    } else {
-        player.vx = 0;
     }
-    
-    // Vertical collision
-    const wasOnGround = player.onGround;
-    
     if (!checkCollision(player.x, nextY, player.width, player.height)) {
         player.y = nextY;
-        player.onGround = false;
-    } else {
-        if (player.vy > 0) {
-            // Landing
-            player.onGround = true;
-            player.canDoubleJump = true;
-            player.coyoteTime = 0.1;
-        }
-        player.vy = 0;
     }
-    
-    // Check ground again for coyote time
-    if (!player.onGround && wasOnGround) {
-        player.coyoteTime = 0.1;
-    }
-    
-    player.onGround = checkGroundCollision();
 }
 
 // === CAMERA ===
@@ -383,39 +295,44 @@ function render() {
         }
     }
     
-    // Render player with better visibility
+    // Top-down JRPG chibi sprite
+    const px = player.x;
+    const py = player.y;
+    const w = player.width;
+    const h = player.height;
+
     // Body
-    ctx.fillStyle = '#4A90E2';  // Nice blue color
-    ctx.fillRect(player.x, player.y, player.width, player.height);
-    
-    // Border/outline for better visibility
-    ctx.strokeStyle = '#2C5F8D';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(player.x, player.y, player.width, player.height);
-    
-    // Face - eyes
-    ctx.fillStyle = '#FFFFFF';
-    const eyeSize = 8;
-    const eyeY = player.y + player.height * 0.3;
-    ctx.fillRect(player.x + player.width * 0.25 - eyeSize/2, eyeY, eyeSize, eyeSize);
-    ctx.fillRect(player.x + player.width * 0.75 - eyeSize/2, eyeY, eyeSize, eyeSize);
-    
-    // Pupils
-    ctx.fillStyle = '#000000';
-    const pupilSize = 4;
-    ctx.fillRect(player.x + player.width * 0.25 - pupilSize/2, eyeY + 2, pupilSize, pupilSize);
-    ctx.fillRect(player.x + player.width * 0.75 - pupilSize/2, eyeY + 2, pupilSize, pupilSize);
-    
-    // Mouth
-    ctx.fillStyle = '#000000';
-    const mouthY = player.y + player.height * 0.6;
-    ctx.fillRect(player.x + player.width * 0.3, mouthY, player.width * 0.4, 3);
-    
-    // Ground indicator (feet glow when on ground)
-    if (player.onGround) {
-        ctx.fillStyle = 'rgba(0, 255, 0, 0.5)';
-        ctx.fillRect(player.x, player.y + player.height - 4, player.width, 4);
+    ctx.fillStyle = '#3d7ddf';
+    ctx.fillRect(px, py + h * 0.25, w, h * 0.6);
+
+    // Head
+    ctx.fillStyle = '#f5d7b2';
+    ctx.fillRect(px + w * 0.15, py, w * 0.7, h * 0.35);
+
+    // Hair fringe
+    ctx.fillStyle = '#2b4c9b';
+    ctx.fillRect(px + w * 0.1, py, w * 0.8, h * 0.12);
+
+    // Eyes based on facing
+    const eyeY = py + h * 0.18;
+    const eyeSize = 3;
+    ctx.fillStyle = '#1a1a1a';
+    if (player.facing === 'left') {
+        ctx.fillRect(px + w * 0.25, eyeY, eyeSize, eyeSize);
+    } else if (player.facing === 'right') {
+        ctx.fillRect(px + w * 0.65, eyeY, eyeSize, eyeSize);
+    } else { // up/down
+        ctx.fillRect(px + w * 0.35, eyeY, eyeSize, eyeSize);
+        ctx.fillRect(px + w * 0.55, eyeY, eyeSize, eyeSize);
     }
+
+    // Belt
+    ctx.fillStyle = '#222';
+    ctx.fillRect(px, py + h * 0.55, w, 2);
+
+    // Boots
+    ctx.fillStyle = '#1f2b46';
+    ctx.fillRect(px + 2, py + h * 0.8, w - 4, h * 0.15);
     
     ctx.restore();
     
@@ -454,9 +371,7 @@ function renderHUD() {
     // Debug info
     if (keys['f3']) {
         ctx.fillText(`Chunks carregados: ${world.loadedChunks}`, barX, barY + 100);
-        ctx.fillText(`No chão: ${player.onGround}`, barX, barY + 120);
-        ctx.fillText(`Pode pulo duplo: ${player.canDoubleJump}`, barX, barY + 140);
-        ctx.fillText(`Coyote time: ${player.coyoteTime.toFixed(2)}s`, barX, barY + 160);
+        ctx.fillText(`Direção: ${player.facing}`, barX, barY + 120);
     }
 }
 
@@ -583,26 +498,32 @@ async function init() {
             updateLoadingMessage('Encontrando terreno...');
             const spawnChunk = world.chunks.get(getChunkKey(playerChunk.chunkX, playerChunk.chunkY));
             if (spawnChunk && spawnChunk.collisionMap) {
-                // Find ground at player's X position
-                const localX = Math.floor((player.x - spawnChunk.worldX) / CONFIG.BLOCK_SIZE);
-                if (localX >= 0 && localX < spawnChunk.collisionMap[0].length) {
-                    // Find first solid block from top
-                    let placed = false;
-                    for (let y = 0; y < spawnChunk.collisionMap.length; y++) {
-                        if (spawnChunk.collisionMap[y][localX]) {
-                            // Spawn player on top of this block
-                            player.y = spawnChunk.worldY + (y * CONFIG.BLOCK_SIZE) - player.height;
-                            console.log(`👤 Player spawned at ground level: Y=${player.y}`);
-                            placed = true;
-                            break;
+                // Find a walkable tile near chunk center
+                const size = spawnChunk.collisionMap.length;
+                const startX = Math.floor(size / 2);
+                const startY = Math.floor(size / 2);
+                let placed = false;
+
+                const maxRadius = size;
+                for (let r = 0; r < maxRadius && !placed; r++) {
+                    for (let dy = -r; dy <= r && !placed; dy++) {
+                        for (let dx = -r; dx <= r && !placed; dx++) {
+                            const tx = startX + dx;
+                            const ty = startY + dy;
+                            if (tx < 0 || ty < 0 || tx >= size || ty >= size) continue;
+                            if (!spawnChunk.collisionMap[ty][tx]) {
+                                player.x = spawnChunk.worldX + tx * CONFIG.BLOCK_SIZE + (CONFIG.BLOCK_SIZE - player.width) / 2;
+                                player.y = spawnChunk.worldY + ty * CONFIG.BLOCK_SIZE + (CONFIG.BLOCK_SIZE - player.height) / 2;
+                                placed = true;
+                            }
                         }
                     }
-                    // Fallback: place near bottom if no solid block found in column
-                    if (!placed) {
-                        const fallbackY = spawnChunk.worldY + CONFIG.CHUNK_SIZE - (CONFIG.BLOCK_SIZE * 6) - player.height;
-                        player.y = fallbackY;
-                        console.log(`👤 Player fallback spawn at Y=${player.y}`);
-                    }
+                }
+
+                if (!placed) {
+                    // Absolute fallback: place at chunk center
+                    player.x = spawnChunk.worldX + (CONFIG.CHUNK_SIZE - player.width) / 2;
+                    player.y = spawnChunk.worldY + (CONFIG.CHUNK_SIZE - player.height) / 2;
                 }
             }
         
