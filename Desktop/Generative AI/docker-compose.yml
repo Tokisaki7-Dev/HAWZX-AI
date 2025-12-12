@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  noki-ai-backend:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - STABILITY_API_KEY=AIzaSyCegsTQvSQrS4giNDV_19svmMJrdD6i_ow
+      - SUPABASE_URL=https://qwsnxutkvwfubtcnavnt.supabase.co
+      - SUPABASE_KEY=sb_secret_5f_W3QQAOT0Sqo39DkYXHQ_oKe1kWwl
+    restart: unless-stopped
+    container_name: noki-ai-backend
