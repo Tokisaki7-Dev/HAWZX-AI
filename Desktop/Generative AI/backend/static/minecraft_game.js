@@ -105,12 +105,17 @@ async function loadChunk(chunkX, chunkY) {
             })
         });
         
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
         
         // Create image from base64
         const img = new Image();
-        await new Promise((resolve) => {
+        await new Promise((resolve, reject) => {
             img.onload = resolve;
+            img.onerror = reject;
             img.src = `data:image/png;base64,${data.image}`;
         });
         
@@ -133,9 +138,40 @@ async function loadChunk(chunkX, chunkY) {
         
         return chunk;
     } catch (error) {
-        console.error('Error loading chunk:', error);
-        return null;
+        console.error('Error loading chunk:', chunkX, chunkY, error);
+        // Return a placeholder chunk to avoid breaking the game
+        return createPlaceholderChunk(chunkX, chunkY);
     }
+}
+
+function createPlaceholderChunk(chunkX, chunkY) {
+    // Create a simple colored chunk as fallback
+    const canvas = document.createElement('canvas');
+    canvas.width = CONFIG.CHUNK_SIZE;
+    canvas.height = CONFIG.CHUNK_SIZE;
+    const ctx = canvas.getContext('2d');
+    
+    // Fill with a grid pattern
+    ctx.fillStyle = '#2a9d8f';
+    ctx.fillRect(0, 0, CONFIG.CHUNK_SIZE, CONFIG.CHUNK_SIZE);
+    
+    const img = new Image();
+    img.src = canvas.toDataURL();
+    
+    const chunk = {
+        x: chunkX,
+        y: chunkY,
+        image: img,
+        collisionMap: Array(32).fill(null).map(() => Array(32).fill(false)),
+        biome: 'plains',
+        worldX: chunkX * CONFIG.CHUNK_SIZE,
+        worldY: chunkY * CONFIG.CHUNK_SIZE
+    };
+    
+    world.chunks.set(getChunkKey(chunkX, chunkY), chunk);
+    world.loadedChunks++;
+    
+    return chunk;
 }
 
 async function loadSurroundingChunks(centerChunkX, centerChunkY, radius = 2) {
@@ -474,28 +510,45 @@ async function init() {
     console.log(`🌍 World Seed: ${world.seed}`);
     
     updateWorldSeed();
-    updateLoadingMessage('Gerando mundo inicial...');
+    updateLoadingMessage('Inicializando...');
     updateLoadingProgress(10);
     
-    // Get world info
+    // Get world info (optional - continue if fails)
     try {
         const response = await fetch('/world-info');
-        const worldInfo = await response.json();
-        console.log('World configuration:', worldInfo);
+        if (response.ok) {
+            const worldInfo = await response.json();
+            console.log('World configuration:', worldInfo);
+        }
     } catch (error) {
-        console.error('Error getting world info:', error);
+        console.warn('Could not fetch world info:', error);
     }
     
     updateLoadingProgress(30);
     
-    // Load initial chunks
-    const playerChunk = getChunkCoords(player.x, player.y);
-    updateLoadingMessage('Carregando chunks iniciais...');
-    await loadSurroundingChunks(playerChunk.chunkX, playerChunk.chunkY, 2);
+    // Load initial chunks with error handling
+    try {
+        const playerChunk = getChunkCoords(player.x, player.y);
+        updateLoadingMessage('Carregando chunks iniciais...');
+        
+        // Load chunks with timeout
+        const loadPromise = loadSurroundingChunks(playerChunk.chunkX, playerChunk.chunkY, 1);
+        const timeoutPromise = new Promise((resolve) => setTimeout(resolve, 5000));
+        
+        await Promise.race([loadPromise, timeoutPromise]);
+        
+        updateLoadingProgress(100);
+        updateLoadingMessage('Mundo pronto!');
+    } catch (error) {
+        console.error('Error loading initial chunks:', error);
+        updateLoadingMessage('Iniciando com chunks básicos...');
+        
+        // Create at least one chunk at player position
+        const playerChunk = getChunkCoords(player.x, player.y);
+        createPlaceholderChunk(playerChunk.chunkX, playerChunk.chunkY);
+    }
     
-    updateLoadingProgress(100);
-    updateLoadingMessage('Mundo pronto!');
-    
+    // Always start the game after timeout
     setTimeout(() => {
         hideLoadingScreen();
         
@@ -509,7 +562,7 @@ async function init() {
         console.log('  SPACE - Jump (press twice for double jump)');
         console.log('  SHIFT - Run');
         console.log('  F3 - Debug info');
-    }, 500);
+    }, 1000);
 }
 
 // Start game when page loads
